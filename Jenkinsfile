@@ -23,7 +23,7 @@ pipeline {
             steps {
                 dir('backend') {
                     echo 'Installing Backend Dependencies...'
-                    bat 'npm install'
+                    sh 'npm install'
                 }
             }
         }
@@ -32,9 +32,9 @@ pipeline {
             steps {
                 dir('frontend') {
                     echo 'Installing Frontend Dependencies...'
-                    bat 'npm install'
+                    sh 'npm install'
                     echo 'Building React App...'
-                    bat 'npm run build'
+                    sh 'npm run build'
                 }
             }
         }
@@ -44,19 +44,19 @@ pipeline {
                 echo 'Deploying application to Azure VM...'
                 
                 // 1. Transfer Backend files
-                bat """
-                scp -i "%SSH_KEY%" -o StrictHostKeyChecking=no backend/package.json backend/server.js %VM_USER%@%VM_IP%:/var/www/document-approval/backend/
-                scp -r -i "%SSH_KEY%" -o StrictHostKeyChecking=no backend/routes backend/config backend/middleware backend/models backend/controllers %VM_USER%@%VM_IP%:/var/www/document-approval/backend/
+                sh """
+                scp -i "$SSH_KEY" -o StrictHostKeyChecking=no backend/package.json backend/server.js $VM_USER@$VM_IP:/var/www/document-approval/backend/
+                scp -r -i "$SSH_KEY" -o StrictHostKeyChecking=no backend/routes backend/config backend/middleware backend/models backend/controllers $VM_USER@$VM_IP:/var/www/document-approval/backend/
                 """
                 
                 // 2. Transfer Frontend build files (Vite uses 'dist' folder)
-                bat """
-                scp -r -i "%SSH_KEY%" -o StrictHostKeyChecking=no frontend/dist/* %VM_USER%@%VM_IP%:/var/www/document-approval/frontend/
+                sh """
+                scp -r -i "$SSH_KEY" -o StrictHostKeyChecking=no frontend/dist/* $VM_USER@$VM_IP:/var/www/document-approval/frontend/
                 """
 
                 // 3. Connect via SSH to install backend production dependencies & restart PM2
-                bat """
-                ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=no %VM_USER%@%VM_IP% "cd /var/www/document-approval/backend && npm install --omit=dev && pm2 restart server || pm2 start server.js --name 'doc-verify-backend'"
+                sh """
+                ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no $VM_USER@$VM_IP "cd /var/www/document-approval/backend && npm install --omit=dev && pm2 restart server || pm2 start server.js --name 'doc-verify-backend'"
                 """
             }
         }
