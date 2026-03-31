@@ -8,6 +8,8 @@ import './index.css';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
+import { Toaster } from 'react-hot-toast';
+
 // A simple component to redirect users from the root to their respective dashboards
 const RootRedirect = () => {
   const { user } = useAuth();
@@ -21,6 +23,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <Toaster position="top-right" />
         <Routes>
           <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<Login />} />
