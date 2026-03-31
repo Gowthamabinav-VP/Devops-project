@@ -15,7 +15,7 @@ pipeline {
         stage('Install Backend') {
             steps {
                 dir('backend') {
-                    sh 'npm install'
+                    sh 'npm install --no-audit --no-fund'
                 }
             }
         }
@@ -23,8 +23,8 @@ pipeline {
         stage('Install & Build Frontend') {
             steps {
                 dir('frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
+                    sh 'npm install --no-audit --no-fund'
+                    sh 'export NODE_OPTIONS="--max-old-space-size=512" && npm run build'
                 }
             }
         }
@@ -33,8 +33,8 @@ pipeline {
             steps {
                 // Stop PM2 process first
                 sh '''
-                    sudo -u azureuser bash -c "pm2 delete doc-verify-backend 2>/dev/null || true"
-                    sudo -u azureuser bash -c "pm2 kill 2>/dev/null || true"
+                    sudo -u gowtham bash -c "pm2 delete doc-verify-backend 2>/dev/null || true"
+                    sudo -u gowtham bash -c "pm2 kill 2>/dev/null || true"
                 '''
 
                 // Sync files locally (without deleting uploads or .env inside the web folder)
