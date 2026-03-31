@@ -146,7 +146,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <a 
-                    href={`${import.meta.env.VITE_BACKEND_URL || `${window.location.protocol}//${window.location.hostname}:5000`}/${selectedRequest.filePath}`} 
+                    href={`${window.location.protocol}//${window.location.hostname}:5000/${selectedRequest.filePath}`} 
                     target="_blank" 
                     rel="noreferrer"
                     className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-blue-600 hover:text-blue-700 hover:border-blue-200 hover:bg-blue-50 transition-colors shadow-sm"

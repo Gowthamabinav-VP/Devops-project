@@ -24,8 +24,8 @@ pipeline {
             steps {
                 dir('frontend') {
                     sh 'npm install --no-audit --no-fund'
-                    // Replace <YOUR_AZURE_VM_IP> with the actual public IP address of your Azure VM
-                    sh 'export NODE_OPTIONS="--max-old-space-size=512" && export VITE_API_URL="http://<YOUR_AZURE_VM_IP>:5000/api" && export VITE_BACKEND_URL="http://<YOUR_AZURE_VM_IP>:5000" && npm run build'
+                    // The frontend now dynamically determines the backend IP (bypassing the need for VITE_ env vars)
+                    sh 'export NODE_OPTIONS="--max-old-space-size=512" && npm run build'
                 }
             }
         }
