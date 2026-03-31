@@ -55,13 +55,13 @@ pipeline {
                     # Ensure .env exists in backend (Assuming you created a global .env file in /var/www/document-approval/.env)
                     sudo cp /var/www/document-approval/.env /var/www/document-approval/backend/.env 2>/dev/null || true
 
-                    # Change permissions to the azureuser
-                    sudo chown -R azureuser:azureuser /var/www/document-approval
+                    # Change permissions to the target user (gowtham)
+                    sudo chown -R gowtham:gowtham /var/www/document-approval
                 '''
 
                 // Start PM2 fresh as the target user
                 sh '''
-                    sudo -u azureuser bash -c "cd /var/www/document-approval/backend && pm2 start server.js --name doc-verify-backend && pm2 save"
+                    sudo -u gowtham bash -c "cd /var/www/document-approval/backend && pm2 start server.js --name doc-verify-backend && pm2 save"
                 '''
             }
         }
