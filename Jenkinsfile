@@ -5,10 +5,6 @@ pipeline {
         NODE_ENV = 'production'
         MONGO_URI = credentials('MONGO_URI')
         JWT_SECRET = credentials('JWT_SECRET')
-        // NEW DEPLOYMENT ENV VARS
-        VM_IP = 'your_azure_vm_ip' // Update with your actual Azure VM IP Address
-        VM_USER = 'azureuser'      // Update with your Azure VM SSH Username
-        SSH_KEY = credentials('azure_vm_ssh_key') // Create this 'Secret file' credential in Jenkins containing your Azure SSH Private Key
     }
 
     stages {
@@ -43,20 +39,20 @@ pipeline {
             steps {
                 echo 'Deploying application to Azure VM...'
                 
-                // 1. Transfer Backend files
+                // Transfer Backend files (Replace 'azureuser@your_azure_vm_ip' with your actual VM user and IP)
                 sh """
-                scp -i "$SSH_KEY" -o StrictHostKeyChecking=no backend/package.json backend/server.js $VM_USER@$VM_IP:/var/www/document-approval/backend/
-                scp -r -i "$SSH_KEY" -o StrictHostKeyChecking=no backend/routes backend/config backend/middleware backend/models backend/controllers $VM_USER@$VM_IP:/var/www/document-approval/backend/
+                scp -o StrictHostKeyChecking=no backend/package.json backend/server.js azureuser@your_azure_vm_ip:/var/www/document-approval/backend/
+                scp -r -o StrictHostKeyChecking=no backend/routes backend/config backend/middleware backend/models backend/controllers azureuser@your_azure_vm_ip:/var/www/document-approval/backend/
                 """
                 
-                // 2. Transfer Frontend build files (Vite uses 'dist' folder)
+                // Transfer Frontend build files
                 sh """
-                scp -r -i "$SSH_KEY" -o StrictHostKeyChecking=no frontend/dist/* $VM_USER@$VM_IP:/var/www/document-approval/frontend/
+                scp -r -o StrictHostKeyChecking=no frontend/dist/* azureuser@your_azure_vm_ip:/var/www/document-approval/frontend/
                 """
 
-                // 3. Connect via SSH to install backend production dependencies & restart PM2
+                // Connect via SSH to install backend production dependencies & restart PM2
                 sh """
-                ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no $VM_USER@$VM_IP "cd /var/www/document-approval/backend && npm install --omit=dev && pm2 restart server || pm2 start server.js --name 'doc-verify-backend'"
+                ssh -o StrictHostKeyChecking=no azureuser@your_azure_vm_ip "cd /var/www/document-approval/backend && npm install --omit=dev && pm2 restart server || pm2 start server.js --name 'doc-verify-backend'"
                 """
             }
         }
