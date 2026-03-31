@@ -7,10 +7,16 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const userInfo = localStorage.getItem('userInfo');
-  if (userInfo) {
-    const parsedUserInfo = JSON.parse(userInfo);
-    config.headers.Authorization = `Bearer ${parsedUserInfo.token}`;
+  try {
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo && userInfo !== 'undefined' && userInfo !== 'null') {
+      const parsedUserInfo = JSON.parse(userInfo);
+      if (parsedUserInfo && parsedUserInfo.token) {
+        config.headers.Authorization = `Bearer ${parsedUserInfo.token}`;
+      }
+    }
+  } catch (error) {
+    console.error('Interceptor error parsing userInfo:', error);
   }
   return config;
 });
