@@ -24,7 +24,8 @@ pipeline {
             steps {
                 dir('frontend') {
                     sh 'npm install --no-audit --no-fund'
-                    sh 'export NODE_OPTIONS="--max-old-space-size=512" && npm run build'
+                    // Replace <YOUR_AZURE_VM_IP> with the actual public IP address of your Azure VM
+                    sh 'export NODE_OPTIONS="--max-old-space-size=512" && export VITE_API_URL="http://<YOUR_AZURE_VM_IP>:5000/api" && export VITE_BACKEND_URL="http://<YOUR_AZURE_VM_IP>:5000" && npm run build'
                 }
             }
         }
