@@ -1,69 +1,78 @@
 pipeline {
     agent any
 
-    environment {
-        NODE_ENV = 'production'
-        MONGO_URI = credentials('MONGO_URI')
-        JWT_SECRET = credentials('JWT_SECRET')
+    tools {
+        nodejs '20' // NOTE: Ensure you have "20" configured in Jenkins Global Tool Configuration
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checking out source control...'
                 checkout scm
             }
         }
 
-        stage('Backend: Install Dependencies') {
+        stage('Install Backend') {
             steps {
                 dir('backend') {
-                    echo 'Installing Backend Dependencies...'
                     sh 'npm install'
                 }
             }
         }
 
-        stage('Frontend: Install Dependencies & Build') {
+        stage('Install & Build Frontend') {
             steps {
                 dir('frontend') {
-                    echo 'Installing Frontend Dependencies...'
                     sh 'npm install'
-                    echo 'Building React App...'
                     sh 'npm run build'
                 }
             }
         }
 
-        stage('Deploy to Azure VM') {
+        stage('Deploy') {
             steps {
-                echo 'Deploying application to Azure VM...'
-                
-                // Transfer Backend files (Replace 'azureuser@your_azure_vm_ip' with your actual VM user and IP)
-                sh """
-                scp -o StrictHostKeyChecking=no backend/package.json backend/server.js azureuser@your_azure_vm_ip:/var/www/document-approval/backend/
-                scp -r -o StrictHostKeyChecking=no backend/routes backend/config backend/middleware backend/models backend/controllers azureuser@your_azure_vm_ip:/var/www/document-approval/backend/
-                """
-                
-                // Transfer Frontend build files
-                sh """
-                scp -r -o StrictHostKeyChecking=no frontend/dist/* azureuser@your_azure_vm_ip:/var/www/document-approval/frontend/
-                """
+                // Stop PM2 process first
+                sh '''
+                    sudo -u azureuser bash -c "pm2 delete doc-verify-backend 2>/dev/null || true"
+                    sudo -u azureuser bash -c "pm2 kill 2>/dev/null || true"
+                '''
 
-                // Connect via SSH to install backend production dependencies & restart PM2
-                sh """
-                ssh -o StrictHostKeyChecking=no azureuser@your_azure_vm_ip "cd /var/www/document-approval/backend && npm install --omit=dev && pm2 restart server || pm2 start server.js --name 'doc-verify-backend'"
-                """
+                // Sync files locally (without deleting uploads or .env inside the web folder)
+                sh '''
+                    sudo mkdir -p /var/www/document-approval/backend
+                    sudo mkdir -p /var/www/document-approval/frontend
+                    sudo mkdir -p /var/www/document-approval/backend/uploads
+
+                    # Sync Backend
+                    sudo rsync -a --delete --exclude='uploads' --exclude='.env' --exclude='node_modules' backend/ /var/www/document-approval/backend/
+                    # Sync Frontend (Only the built static files)
+                    sudo rsync -a --delete frontend/dist/ /var/www/document-approval/frontend/
+
+                    # Copy node_modules over
+                    cd backend && sudo cp -r node_modules /var/www/document-approval/backend/ 2>/dev/null || true
+                    cd ..
+
+                    # Ensure .env exists in backend (Assuming you created a global .env file in /var/www/document-approval/.env)
+                    sudo cp /var/www/document-approval/.env /var/www/document-approval/backend/.env 2>/dev/null || true
+
+                    # Change permissions to the azureuser
+                    sudo chown -R azureuser:azureuser /var/www/document-approval
+                '''
+
+                // Start PM2 fresh as the target user
+                sh '''
+                    sudo -u azureuser bash -c "cd /var/www/document-approval/backend && pm2 start server.js --name doc-verify-backend && pm2 save"
+                '''
             }
         }
     }
 
     post {
         success {
-            echo 'Pipeline executed successfully!'
+            echo '✅ Deployment successful!'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo '❌ Deployment failed.'
         }
     }
 }
